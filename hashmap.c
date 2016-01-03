@@ -18,6 +18,8 @@ struct hashmap_t {
 	int ncollision;
 };
 
+static void hashmap_rehash(struct hashmap_t *m);
+
 static unsigned oat_hash(void *key, size_t len) {
 	unsigned char *p = key;
 	unsigned h = 0;
@@ -89,6 +91,7 @@ void hashmap_upsert(struct hashmap_t *m, void *key, size_t keylen, void *new, vo
 	m->ncollision++;
 
 INSERT:
+	m->nelem++;
 	new_elem = cs_malloc(sizeof(struct bucket_elem));
 	new_elem->key = cs_malloc(keylen);
 	memcpy(new_elem->key, key, keylen);
@@ -101,6 +104,7 @@ INSERT:
 	} else {
 		m->bucket[idx] = new_elem;
 	}
+	if (m->nelem > m->cap) hashmap_rehash(m);
 	return;
 }
 
@@ -148,6 +152,7 @@ void hashmap_delete(struct hashmap_t *m, void *key, size_t keylen, void **oldp) 
 		}
 	}
 need_free:
+	m->nelem--;
 	//printf("delete key %d data %p\n", key, in_bucket->data);
 	if (pre_bucket) {
 		pre_bucket->next = in_bucket->next;
@@ -161,6 +166,37 @@ need_free:
 	return;
 }
 
-/* TODO rehash 
- * static void hashmap_rehash(struct hashmap_t *m);
- * */
+
+static void hashmap_rehash(struct hashmap_t *m) {
+	int cap, i;
+	unsigned idx;
+	struct bucket_elem **bucket; 
+	struct bucket_elem *old_bk_elm, *new_bk_elm;
+
+	cap = m->cap;
+	m->cap *= 2; /* hashma_index deps on m->cap, so mult this value early */
+       	bucket = cs_malloc(m->cap * sizeof(struct bucket_elem));
+	memset(bucket, 0, m->cap * sizeof(struct bucket_elem));
+
+	for (i=0; i<cap; i++) {
+		while(m->bucket[i]) {
+			old_bk_elm = m->bucket[i];
+			m->bucket[i] = old_bk_elm->next;
+			old_bk_elm->next = NULL;
+
+			idx = hashmap_index(m, old_bk_elm->key, old_bk_elm->keylen);
+			new_bk_elm = bucket[idx];
+			if (!new_bk_elm) {
+				bucket[idx] = old_bk_elm;
+			} else {
+				while(new_bk_elm->next) {
+					new_bk_elm = new_bk_elm->next;
+				}
+				new_bk_elm->next = old_bk_elm;
+			}
+		}
+	}
+	cs_free(m->bucket);
+	m->bucket = bucket;
+	m->ncollision = 0;
+}
