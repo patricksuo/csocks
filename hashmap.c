@@ -3,10 +3,10 @@
 #include "malloc.h"
 //#include <stdio.h>
 
-
 struct bucket_elem;
 struct bucket_elem {
-	int key;	
+	void *key;	
+	size_t keylen;
 	void *data;
 	struct bucket_elem *next;
 };
@@ -18,9 +18,36 @@ struct hashmap_t {
 	int ncollision;
 };
 
-static int hashmap_index(struct hashmap_t *m, int key) {
-	return key%m->cap;
+static unsigned oat_hash(void *key, size_t len) {
+	unsigned char *p = key;
+	unsigned h = 0;
+	int i;
+
+	for (i = 0; i < len; i++) {
+		h += p[i];
+		h += (h << 10);
+		h ^= (h >> 6);
+	}
+
+	h += (h << 3);
+	h ^= (h >> 11);
+	h += (h << 15);
+
+	return h;
+}
+
+static unsigned hashmap_index(struct hashmap_t *m, void *key, size_t keylen) {
+	unsigned idx = oat_hash(key, keylen);
+	return idx%m->cap;
 }	
+
+/*
+ * if a == b return 0 else return nonzero
+ */
+static int hashmap_key_equal(void *a, size_t alen, void *b, size_t blen) {
+	if (alen != blen) return 0;
+	return !memcmp(a, b, (size_t)alen);
+}
 
 
 struct hashmap_t *hashmap_new(int cap) {
@@ -34,10 +61,10 @@ struct hashmap_t *hashmap_new(int cap) {
 	return m;
 }
 
-void hashmap_upsert(struct hashmap_t *m, int key, void *new, void **oldp) {
+void hashmap_upsert(struct hashmap_t *m, void *key, size_t keylen, void *new, void **oldp) {
 	struct bucket_elem *new_elem;
 	struct bucket_elem *in_bucket;
-	int idx = hashmap_index(m, key);
+	unsigned idx = hashmap_index(m, key, keylen);
 	in_bucket = m->bucket[idx];
 	*oldp = NULL;
 
@@ -46,7 +73,8 @@ void hashmap_upsert(struct hashmap_t *m, int key, void *new, void **oldp) {
 	}
 
 	while (1) {
-		if (in_bucket->key == key) { /* update old key's data */
+		if (hashmap_key_equal(in_bucket->key, in_bucket->keylen,
+					key, keylen)) {  /* update old key's data */
 			*oldp = in_bucket->data;
 			in_bucket->data = new;
 			//printf("update key %d data %p\n", key, new);
@@ -62,7 +90,9 @@ void hashmap_upsert(struct hashmap_t *m, int key, void *new, void **oldp) {
 
 INSERT:
 	new_elem = cs_malloc(sizeof(struct bucket_elem));
-	new_elem->key = key;
+	new_elem->key = cs_malloc(keylen);
+	memcpy(new_elem->key, key, keylen);
+	new_elem->keylen = keylen;
 	new_elem->data = new;
 	//printf("insert key %d data %p\n", key, new);
 	new_elem->next = NULL;
@@ -74,16 +104,17 @@ INSERT:
 	return;
 }
 
-void *hashmap_get(struct hashmap_t *m, int key) {
+void *hashmap_get(struct hashmap_t *m, void *key, size_t keylen) {
 	struct bucket_elem *in_bucket;
-	int idx = hashmap_index(m, key);
+	unsigned idx = hashmap_index(m, key, keylen);
 	in_bucket = m->bucket[idx];
 	if (in_bucket == NULL) {
 		return NULL;
 	}
 
 	while (1) {
-		if (in_bucket->key == key) {
+		if (hashmap_key_equal(in_bucket->key, in_bucket->keylen,
+					key, keylen)) {  /* update old key's data */
 			return in_bucket->data;
 		}
 		if (in_bucket->next == NULL) {
@@ -94,9 +125,9 @@ void *hashmap_get(struct hashmap_t *m, int key) {
 	return NULL;
 }
 
-void hashmap_delete(struct hashmap_t *m, int key, void **oldp) {
+void hashmap_delete(struct hashmap_t *m, void *key, size_t keylen, void **oldp) {
 	struct bucket_elem *in_bucket, *pre_bucket;
-	int idx = hashmap_index(m, key);
+	unsigned idx = hashmap_index(m, key, keylen);
 	pre_bucket = NULL;
 	in_bucket = m->bucket[idx];
 	if (in_bucket == NULL) {
@@ -104,7 +135,8 @@ void hashmap_delete(struct hashmap_t *m, int key, void **oldp) {
 		return;
 	}
 	while (1) {
-		if (in_bucket->key == key) {
+		if (hashmap_key_equal(in_bucket->key, in_bucket->keylen,
+					key, keylen)) {  /* update old key's data */
 			goto need_free;
 		}
 		if (in_bucket->next) {
@@ -124,6 +156,7 @@ need_free:
 		m->bucket[idx] = in_bucket->next;
 	}
 	*oldp = in_bucket->data;
+	cs_free(in_bucket->key);
 	cs_free(in_bucket);
 	return;
 }

@@ -38,22 +38,22 @@ int main(int argc, char **argv) {
 		if (inmap && insert) { 
 			/* update */
 			data++;
-			hashmap_upsert(map, key, (void*)(intptr_t)data, &datap);
+			hashmap_upsert(map, &key, sizeof(int), INT2PTR(data),  &datap);
 			assert((intptr_t)datap == (intptr_t)test_data[key]);
 			test_data[key] = data;
 		} else if ( !inmap && insert) {
 			/* insert */
-			hashmap_upsert(map, key, (void*)(intptr_t)data, &datap);
+			hashmap_upsert(map, &key, sizeof(int), INT2PTR(data),  &datap);
 			assert( (intptr_t)datap == 0);
 			test_status[key] = 1;
 		} else if (inmap && !insert) {
 			/* delete */
-			hashmap_delete(map, key, &datap);
+			hashmap_delete(map, &key, sizeof(int), &datap);
 			assert((intptr_t)datap == (intptr_t)test_data[key]);
 			test_status[key] = 0;
 		} else if (!inmap && !insert) {
 			/* nothing to be deleted */
-			hashmap_delete(map, key, &datap);
+			hashmap_delete(map, &key, sizeof(int), &datap);
 			assert((intptr_t)datap == 0);
 		}
 	}

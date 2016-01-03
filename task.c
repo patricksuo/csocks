@@ -28,7 +28,7 @@ static struct hashmap_t *task_ctx_map; /*task id -> task pointer*/
 
 static void trampoline_wraper(int tid) {
 	struct cs_task_t *task;
-	task = hashmap_get(task_ctx_map, tid);
+	task = hashmap_get(task_ctx_map, &tid, sizeof(int));
 	task->startfn(task->startarg);
 	task_exit();
 }
@@ -122,7 +122,7 @@ static void task_free(struct cs_task_t *task) {
 		cs_free(task->startarg);
 	}
 	/* TODO clean up fd */
-	hashmap_delete(task_ctx_map, task->id, &datap);
+	hashmap_delete(task_ctx_map, &(task->id), sizeof(int), &datap);
 	cs_free(task);
 }
 
@@ -145,7 +145,7 @@ void task_new(void (*fn)(void*), void *arg) {
 
 	makecontext(task->ctx, (void (*)(void))trampoline_wraper, 1, task->id);
 	void *old = NULL;
-	hashmap_upsert(task_ctx_map, task->id, task, &old);
+	hashmap_upsert(task_ctx_map, &(task->id),sizeof(int), task, &old);
 	assert(old==NULL);  /*old should be NULL; */
 	list_add_tail(&g_tasks_queue, &task->task_list);
 
