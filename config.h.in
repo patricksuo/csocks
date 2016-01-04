@@ -1,0 +1,2 @@
+#define DEBUG_ALLOC %(debug_alloc)d
+

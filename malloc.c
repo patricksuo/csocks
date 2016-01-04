@@ -2,6 +2,7 @@
 
 #include "malloc.h"
 #include "log.h"
+#include "config.h"
 
 void *cs_malloc(size_t size) {
 	void *ptr;
