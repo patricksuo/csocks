@@ -3,6 +3,7 @@ SOURCES = [
     "hashmap.c",
     "list.c",
     "malloc.c",
+    "malloc_diagnosis.c",
     "task.c",
     "utils.c"
 ]
@@ -15,9 +16,10 @@ env = Environment(CC='gcc', CCFLAGS='-c -Wall -g -rdynamic')
 
 hashmap_test = Program("build/hashmap_test", SOURCES + ["hashmap_test.c"])
 task_test = Program("build/task_test", SOURCES + ["task_test.c"])
+malloc_diagnosis_test = Program("build/malloc_diagnosis_test", SOURCES + ["malloc_diagnosis_test.c"])
 
 
-env.Alias('dev',[hashmap_test, task_test])
+env.Alias('dev',[hashmap_test, task_test, malloc_diagnosis_test])
 
 
 def print_config(msg, two_dee_iterable):

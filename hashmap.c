@@ -20,7 +20,7 @@ struct hashmap_t {
 
 static void hashmap_rehash(struct hashmap_t *m);
 
-static unsigned oat_hash(void *key, size_t len) {
+unsigned oat_hash(void *key, size_t len) {
 	unsigned char *p = key;
 	unsigned h = 0;
 	int i;
@@ -164,6 +164,21 @@ need_free:
 	cs_free(in_bucket->key);
 	cs_free(in_bucket);
 	return;
+}
+
+void hashmap_iter(struct hashmap_t *m, int(*fn)(void *, size_t)) {
+	int i, stop;
+	struct bucket_elem  *bk_elm;
+	for (i=0; i<m->cap; i++) {
+		bk_elm = m->bucket[i];
+		while(bk_elm) {
+			stop = fn(bk_elm->key, bk_elm->keylen);
+			if (stop) {
+				return;
+			}
+			bk_elm = bk_elm->next;
+		}
+	}
 }
 
 

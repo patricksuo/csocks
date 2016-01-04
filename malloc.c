@@ -2,7 +2,7 @@
 
 #include "malloc.h"
 #include "log.h"
-#include "config.h"
+#include "malloc_diagnosis.h"
 
 void *cs_malloc(size_t size) {
 	void *ptr;
@@ -11,11 +11,13 @@ void *cs_malloc(size_t size) {
 		log("malloc failed");
 		exit(EXIT_FAILURE);
 	}
+	leak_diagnosis_stat(1);
 	return ptr;
 }
 
 void cs_free(void *ptr) {
 	free(ptr);
+	leak_diagnosis_stat(-1);
 }
 
 void *cs_calloc(size_t nmem, size_t size) {
@@ -25,6 +27,7 @@ void *cs_calloc(size_t nmem, size_t size) {
 		log("cmalloc failed");
 		exit(EXIT_FAILURE);
 	}
+	leak_diagnosis_stat(1);
 	return ptr;
 }
 
@@ -35,5 +38,6 @@ void *cs_realloc(void *ptr, size_t size) {
 		log("realloc failed");
 		exit(EXIT_FAILURE);
 	}
+	leak_diagnosis_stat(1);
 	return new_ptr;
 }
