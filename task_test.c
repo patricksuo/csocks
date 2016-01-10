@@ -11,7 +11,7 @@ void task_ping(void *arg) {
 	//printf("task_ping start %d ntime\n", ntime);
 	while (ntime)  {
 		ntime--;
-		task_yield();
+		task_yield(1);
 	}
 	//printf("task_ping %d end \n", id );
 }
@@ -24,7 +24,7 @@ void main_loop(void *arg) {
 		*arg = 3;
 		task_new(task_ping, arg);
 		if (ntime % 5 == 0) {
-			task_yield();
+			task_yield(1);
 		}
 	}
 }

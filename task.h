@@ -19,15 +19,18 @@ struct cs_task_t {
 	int id;
 	ucontext_t *ctx;
 	task_status_t status;
+	int schedulable;
 	void (*startfn)(void*); //bootstrap function
 	void *startarg;
 	struct list_node task_list; 
 };
 
 extern int task_schedule_loop();
-extern void task_new(void (*fn)(void*), void *arg);
-extern void task_yield();
+extern struct cs_task_t *task_new(void (*fn)(void*), void *arg);
+extern void task_yield(int schedulable);
 extern void task_exit();
 extern void task_init(int task_cap);
+extern struct cs_task_t *task_current();
+extern void task_rejoin(struct cs_task_t *task);
 
 #endif /* _CS_TASK_H_ */

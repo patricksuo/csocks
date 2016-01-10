@@ -2,8 +2,16 @@
 #define _CS_LOG_H_
 
 #include<stdio.h>
+#include <string.h>
+#include <errno.h>
 #define log(msg) \
 	fprintf(stderr, "[%s:%d] %s", __FILE__, __LINE__, msg)
+
+#define ERR(msg) fprintf(stderr, "[%s] [%s] at %s line %d\n", \
+		msg,  __PRETTY_FUNCTION__, __FILE__, __LINE__)
+
+#define SYS_ERR(msg) fprintf(stderr, "[%s] [%s] [%s] at %s line %d\n", \
+		msg, strerror(errno), __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
 
 //TODO print_trace

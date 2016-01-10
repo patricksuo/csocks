@@ -1,6 +1,7 @@
 #include "list.h"
 
 void list_add_tail(struct list_head *head, struct list_node *node) {
+	head->len++;
 	if (head->tail) {
 		node->next = NULL;
 		node->prev = head->tail;
@@ -21,6 +22,7 @@ struct list_node *list_del_head(struct list_head *head) {
 	if (!orphan) {
 		return NULL;
 	}
+	head->len--;
 
 	if (orphan->next) {
 		orphan->next->prev = NULL;
@@ -32,4 +34,8 @@ struct list_node *list_del_head(struct list_head *head) {
 		head->tail = NULL;
 	}
 	return orphan;
+}
+
+int list_len(struct list_head *head) {
+	return head->len;
 }

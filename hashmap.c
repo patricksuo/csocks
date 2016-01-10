@@ -215,3 +215,7 @@ static void hashmap_rehash(struct hashmap_t *m) {
 	m->bucket = bucket;
 	m->ncollision = 0;
 }
+
+int hashmap_elem_num(struct hashmap_t *m) {
+	return m->nelem;
+}

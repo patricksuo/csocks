@@ -24,7 +24,7 @@ void test_free_in_deep_stack(int i, void *mem) {
 
 int main(int argc, char **argv) {
 	void *mem[10];
-	int i,j;
+	int i;
 	for (i=0; i<10; i++) {
 		mem[i] = test_malloc_in_deep_stack(10);
 	}

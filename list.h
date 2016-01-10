@@ -15,6 +15,7 @@ struct list_node {
 
 struct list_head {
 	struct list_node *head, *tail;
+	int len;
 };
 
 #define LIST_HEAD(name) \
@@ -34,6 +35,7 @@ struct list_head {
 
 extern void list_add_tail(struct list_head *head, struct list_node *node);
 extern struct list_node *list_del_head(struct list_head *head);
+extern int list_len(struct list_head *head);
 
 
 #endif /* _CS_LIST_H_ */
